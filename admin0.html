@@ -2,77 +2,225 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة الإدارة</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة الشاملة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
-        .container { max-width: 800px; margin: auto; }
-        h1 { text-align: center; color: #dc2626; }
-        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-right: 4px solid #3b82f6; }
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        :root { --primary: #1e3a8a; --secondary: #3b82f6; --bg: #f8fafc; --text: #1e293b; --card: #ffffff; --border: #cbd5e1; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        h1 { text-align: center; color: #dc2626; margin-bottom: 30px; }
+        h2 { border-bottom: 2px solid var(--border); padding-bottom: 10px; color: var(--secondary); margin-top: 40px; }
+        
+        .card { background: var(--card); padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-right: 4px solid var(--secondary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;}
+        .info { flex: 1; min-width: 200px; }
+        
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; font-size: 0.9rem; }
         .btn-approve { background: #10b981; }
+        .btn-edit { background: #f59e0b; }
         .btn-reject { background: #ef4444; }
-        h2 { border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; color: #3b82f6; margin-top: 30px; }
+        .btn-add { background: var(--secondary); width: 100%; padding: 12px; font-size: 1rem; margin-top: 10px; }
+        
+        .form-group { margin-bottom: 10px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 5px; box-sizing: border-box; }
+        
+        .review-box { background: #f1f5f9; padding: 10px; border-radius: 5px; margin-top: 5px; font-size: 0.9rem; width: 100%; }
+        .stars { color: #f59e0b; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>⚙️ لوحة الإدارة</h1>
-        <h2>📝 التقييمات المعلقة</h2>
-        <div id="pendingReviews"></div>
-        <h2>💡 الاقتراحات المعلقة</h2>
-        <div id="pendingSuggestions"></div>
+        <h1>⚙️ لوحة التحكم الشاملة</h1>
+
+        <!-- قسم إضافة دكتور -->
+        <h2>➕ إضافة دكتور / مقرر جديد</h2>
+        <div class="card" style="border-right-color: #10b981; display: block;">
+            <div class="form-group">
+                <input type="text" id="newDocName" placeholder="اسم الدكتور (مثال: د. أحمد م.)">
+            </div>
+            <div class="form-group">
+                <input type="text" id="newDocDept" placeholder="القسم أو المقرر (مثال: كلية الهندسة)">
+            </div>
+            <button class="btn btn-add" onclick="addDoctor()">إضافة للقائمة</button>
+        </div>
+
+        <!-- قسم إدارة الدكاترة -->
+        <h2>👨‍🏫 إدارة الدكاترة والمقررات</h2>
+        <div id="doctorsList"><p>جارٍ التحميل...</p></div>
+
+        <!-- قسم إدارة التقييمات المعلقة -->
+        <h2>⏳ التقييمات المعلقة (تحتاج موافقة)</h2>
+        <div id="pendingReviews"><p>جارٍ التحميل...</p></div>
+
+        <!-- قسم إدارة التقييمات المنشورة -->
+        <h2>✅ التقييمات المنشورة</h2>
+        <div id="approvedReviews"><p>جارٍ التحميل...</p></div>
+
+        <!-- قسم الاقتراحات -->
+        <h2>💡 الاقتراحات</h2>
+        <div id="suggestionsList"><p>جارٍ التحميل...</p></div>
     </div>
+
     <script>
-        // ⚠️ ضع مفاتيح Supabase هنا ⚠️
         const SUPABASE_URL = 'https://wovypslgosqeyavendsq.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_YAr7-Oq9x1NHq7i-sXX7Zw_2KdLOpUi';
-        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (prompt("أدخل كلمة المرور:") !== "bin7erzeng") {
+        // كلمة المرور
+        if (prompt("أدخل كلمة المرور:") !== "admin0") {
             document.body.innerHTML = "<h1 style='text-align:center; color:red; margin-top:50px;'>⛔ صلاحية مرفوضة.</h1>";
             throw new Error("Unauthorized");
         }
 
-        async function loadAdminData() {
-            const { data: reviews } = await supabaseClient.from('reviews').select(`*, doctors (name, department)`).eq('is_approved', false);
-            const { data: suggestions } = await supabaseClient.from('suggestions').select('*').eq('is_approved', false);
+        // 1. جلب وعرض البيانات
+        async function loadAllData() {
+            // جلب الدكاترة
+            const { data: doctors } = await supabaseClient.from('doctors').select('*').order('name');
+            const docDiv = document.getElementById('doctorsList');
+            if (!doctors || doctors.length === 0) {
+                docDiv.innerHTML = '<p>لا يوجد دكاترة.</p>';
+            } else {
+                docDiv.innerHTML = doctors.map(d => `
+                    <div class="card" id="doc-${d.id}">
+                        <div class="info">
+                            <strong>${d.name}</strong><br>
+                            <span style="font-size:0.85rem; color:#64748b;">${d.department}</span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-edit" onclick="editDoctor(${d.id}, '${d.name}', '${d.department}')">✏️ تعديل</button>
+                            <button class="btn btn-reject" onclick="deleteDoctor(${d.id})">🗑️ حذف</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
 
-            const revDiv = document.getElementById('pendingReviews');
-            if (!reviews || reviews.length === 0) revDiv.innerHTML = '<p>لا توجد تقييمات معلقة.</p>';
-            else revDiv.innerHTML = reviews.map(r => `
-                <div class="card" id="rev-${r.id}">
-                    <strong>${r.doctors.name}</strong> - ${r.doctors.department}<br>
-                    <span style="color:#f59e0b;">${'⭐'.repeat(r.rating)}</span><br>
-                    <p>"${r.review_text}"</p>
+            // جلب التقييمات
+            const { data: reviews } = await supabaseClient.from('reviews').select(`*, doctors (name, department)`).order('created_at', { ascending: false });
+            
+            const pending = reviews.filter(r => !r.is_approved);
+            const approved = reviews.filter(r => r.is_approved);
+
+            // عرض المعلقة
+            const pendDiv = document.getElementById('pendingReviews');
+            if (pending.length === 0) pendDiv.innerHTML = '<p>لا توجد تقييمات معلقة.</p>';
+            else pendDiv.innerHTML = pending.map(r => `
+                <div class="card" id="rev-${r.id}" style="border-right-color: #f59e0b;">
+                    <div class="info">
+                        <strong>${r.doctors.name}</strong> - ${r.doctors.department}<br>
+                        <span class="stars">${'⭐'.repeat(r.rating)}</span>
+                        <div class="review-box">"${r.review_text}"</div>
+                    </div>
                     <div class="btn-group">
-                        <button class="btn btn-approve" onclick="approveRev(${r.id})">✅ موافقة</button>
-                        <button class="btn btn-reject" onclick="rejectRev(${r.id})">❌ رفض</button>
+                        <button class="btn btn-approve" onclick="approveReview(${r.id})">✅ موافقة</button>
+                        <button class="btn btn-reject" onclick="deleteReview(${r.id})">❌ حذف</button>
                     </div>
                 </div>
             `).join('');
 
-            const sugDiv = document.getElementById('pendingSuggestions');
-            if (!suggestions || suggestions.length === 0) sugDiv.innerHTML = '<p>لا توجد اقتراحات معلقة.</p>';
+            // عرض المنشورة
+            const apprDiv = document.getElementById('approvedReviews');
+            if (approved.length === 0) apprDiv.innerHTML = '<p>لا توجد تقييمات منشورة.</p>';
+            else apprDiv.innerHTML = approved.map(r => `
+                <div class="card" id="rev-${r.id}" style="border-right-color: #10b981;">
+                    <div class="info">
+                        <strong>${r.doctors.name}</strong> - ${r.doctors.department}<br>
+                        <span class="stars">${'⭐'.repeat(r.rating)}</span>
+                        <div class="review-box">"${r.review_text}"</div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-reject" onclick="deleteReview(${r.id})">🗑️ حذف</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // جلب الاقتراحات
+            const { data: suggestions } = await supabaseClient.from('suggestions').select('*').order('created_at', { ascending: false });
+            const sugDiv = document.getElementById('suggestionsList');
+            if (!suggestions || suggestions.length === 0) sugDiv.innerHTML = '<p>لا توجد اقتراحات.</p>';
             else sugDiv.innerHTML = suggestions.map(s => `
                 <div class="card" id="sug-${s.id}">
-                    <strong>${s.suggested_name}</strong> - ${s.suggested_dept}
+                    <div class="info">
+                        <strong>${s.suggested_name}</strong> - ${s.suggested_dept}
+                        <br><span style="font-size:0.8rem; color:#64748b;">${s.is_approved ? 'تمت الموافقة' : 'معلق'}</span>
+                    </div>
                     <div class="btn-group">
-                        <button class="btn btn-approve" onclick="approveSug(${s.id})">✅ موافقة (أضفها في Supabase يدوياً)</button>
-                        <button class="btn btn-reject" onclick="rejectSug(${s.id})">❌ رفض</button>
+                        ${!s.is_approved ? `<button class="btn btn-approve" onclick="approveSug(${s.id})">✅ موافقة</button>` : ''}
+                        <button class="btn btn-reject" onclick="deleteSug(${s.id})">🗑️ حذف</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        async function approveRev(id) { await supabaseClient.from('reviews').update({ is_approved: true }).eq('id', id); document.getElementById(`rev-${id}`).remove(); }
-        async function rejectRev(id) { await supabaseClient.from('reviews').delete().eq('id', id); document.getElementById(`rev-${id}`).remove(); }
-        async function approveSug(id) { await supabaseClient.from('suggestions').update({ is_approved: true }).eq('id', id); document.getElementById(`sug-${id}`).remove(); }
-        async function rejectSug(id) { await supabaseClient.from('suggestions').delete().eq('id', id); document.getElementById(`sug-${id}`).remove(); }
+        // 2. إضافة دكتور
+        async function addDoctor() {
+            const name = document.getElementById('newDocName').value;
+            const dept = document.getElementById('newDocDept').value;
+            if (!name || !dept) { alert('الرجاء كتابة الاسم والقسم'); return; }
+            
+            const { error } = await supabaseClient.from('doctors').insert([{ name: name, department: dept }]);
+            if (error) { alert('حدث خطأ: ' + error.message); }
+            else { alert('تمت الإضافة بنجاح!'); document.getElementById('newDocName').value = ''; document.getElementById('newDocDept').value = ''; loadAllData(); }
+        }
 
-        loadAdminData();
+        // 3. تعديل دكتور
+        async function editDoctor(id, oldName, oldDept) {
+            const newName = prompt("تعديل اسم الدكتور:", oldName);
+            if (newName === null) return; // إذا ضغط إلغاء
+            const newDept = prompt("تعديل القسم/المقرر:", oldDept);
+            if (newDept === null) return;
+
+            const { error } = await supabaseClient.from('doctors').update({ name: newName, department: newDept }).eq('id', id);
+            if (error) { alert('حدث خطأ: ' + error.message); }
+            else { alert('تم التعديل بنجاح!'); loadAllData(); }
+        }
+
+        // 4. حذف دكتور
+        async function deleteDoctor(id) {
+            if (confirm("هل أنت متأكد من حذف هذا الدكتور؟ سيتم حذف جميع تقييماته أيضاً!")) {
+                const { error } = await supabaseClient.from('doctors').delete().eq('id', id);
+                if (error) { alert('حدث خطأ: ' + error.message); }
+                else { alert('تم الحذف!'); loadAllData(); }
+            }
+        }
+
+        // 5. الموافقة على تقييم
+        async function approveReview(id) {
+            const { error } = await supabaseClient.from('reviews').update({ is_approved: true }).eq('id', id);
+            if (!error) loadAllData();
+        }
+
+        // 6. حذف تقييم
+        async function deleteReview(id) {
+            if (confirm("هل أنت متأكد من حذف هذا التقييم؟")) {
+                const { error } = await supabaseClient.from('reviews').delete().eq('id', id);
+                if (!error) loadAllData();
+            }
+        }
+
+        // 7. الموافقة على اقتراح (ينقله لجدول الدكاترة)
+        async function approveSug(id) {
+            const { data: sug } = await supabaseClient.from('suggestions').select('*').eq('id', id).single();
+            if (sug) {
+                // إضافة للدكاترة
+                await supabaseClient.from('doctors').insert([{ name: sug.suggested_name, department: sug.suggested_dept }]);
+                // تحديث حالة الاقتراح
+                await supabaseClient.from('suggestions').update({ is_approved: true }).eq('id', id);
+                alert('تمت الموافقة وإضافة الدكتور للموقع!');
+                loadAllData();
+            }
+        }
+
+        // 8. حذف اقتراح
+        async function deleteSug(id) {
+            if (confirm("هل أنت متأكد من حذف هذا الاقتراح؟")) {
+                await supabaseClient.from('suggestions').delete().eq('id', id);
+                loadAllData();
+            }
+        }
+
+        // تشغيل
+        loadAllData();
     </script>
 </body>
 </html>
