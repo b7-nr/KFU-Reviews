@@ -101,7 +101,9 @@
             </form>
         </div>
     </div>
-    <footer><strong>سياسة الخصوصية:</strong></footer>
+    <footer><strong>سياسة الخصوصية:</strong>سياسة الخصوصية: هذا الموقع منصة لنقل تجارب الطلاب الأكاديمية. نحن نحذف أي محتوى يتضمن تشهيراً أو إساءة.
+    صنع بواسطة بوعقيل
+    </footer>
 
     <script>
         // ⚠️ ضع مفاتيح Supabase هنا ⚠️
@@ -211,7 +213,7 @@
             if (!supabaseClient) return;
             const typedName = document.getElementById('reviewDoctorName').value;
             const doctor = allDoctors.find(d => d.name === typedName);
-            if (!doctor) { showAlert('الرجاء اختيار اسم دكتور صحيح من القائمة المنسدلة.', 'error'); return; }
+            if (!doctor) { showAlert('الرجاء اختيار اسم دكتور  من القائمة .', 'error'); return; }
             
             const btn = this.querySelector('button');
             btn.textContent = 'جارٍ الإرسال...'; btn.disabled = true;
