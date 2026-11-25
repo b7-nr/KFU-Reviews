@@ -36,6 +36,25 @@
         .alert-error { background: #fee2e2; color: #991b1b; }
         .loader { text-align: center; color: var(--secondary); }
         footer { text-align: center; padding: 20px; font-size: 0.8rem; color: #94a3b8; margin-top: 40px; border-top: 1px solid var(--border); }
+        .insta-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            color: white !important;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+        .insta-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(220, 39, 67, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -101,8 +120,13 @@
             </form>
         </div>
     </div>
-    <footer><strong>سياسة الخصوصية:</strong>سياسة الخصوصية: هذا الموقع منصة لنقل تجارب الطلاب الأكاديمية. نحن نحذف أي محتوى يتضمن تشهيراً أو إساءة.
-    صنع بواسطة بوعقيل
+    <footer><strong><footer>
+        <strong>سياسة الخصوصية:</strong> هذا الموقع منصة لنقل تجارب الطلاب الأكاديمية. نحن نحذف أي محتوى يتضمن تشهيراً أو إساءة.
+        <br>
+        <a href="https://www.instagram.com/b7nr_?evlk=aWN4eXA3emgwemg0&utm_source=qr" target="_blank" class="insta-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            تابعنا على إنستقرام
+        </a>
     </footer>
 
     <script>
