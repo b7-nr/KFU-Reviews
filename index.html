@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KFU | تقييمات الطلاب</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #1e3a8a; --secondary: #3b82f6; --bg: #f8fafc; --text: #1e293b; --card: #ffffff; --border: #cbd5e1; --input-bg: #ffffff; --review-bg: #f1f5f9; }
+        [data-theme="dark"] { --primary: #0f172a; --secondary: #60a5fa; --bg: #1e293b; --text: #f8fafc; --card: #334155; --border: #475569; --input-bg: #1e293b; --review-bg: #475569; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; transition: background 0.3s, color 0.3s; }
+        body { background: var(--bg); color: var(--text); margin: 0; line-height: 1.6; }
+        header { background: var(--primary); color: white; padding: 1.5rem; text-align: center; position: relative; }
+        .theme-toggle { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 20px; cursor: pointer; }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .stats-container { display: flex; justify-content: space-around; background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-box h3 { margin: 0; font-size: 1.5rem; color: var(--secondary); }
+        .stat-box p { margin: 5px 0 0 0; font-size: 0.8rem; color: #94a3b8; }
+        .filter-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        .filter-row select, .filter-row input { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); color: var(--text); }
+        .doctor-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 15px; border-right: 4px solid var(--secondary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .doctor-name { font-size: 1.1rem; font-weight: bold; color: var(--secondary); margin: 0 0 5px 0; }
+        .doctor-dept { font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; }
+        .stars { color: #f59e0b; margin-bottom: 10px; }
+        .review-preview { background: var(--review-bg); padding: 10px; border-radius: 5px; font-size: 0.9rem; margin-bottom: 5px; }
+        .form-section { background: var(--card); border-radius: 10px; padding: 20px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .form-section h2 { font-size: 1.2rem; color: var(--secondary); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); }
+        .form-group textarea { height: 100px; resize: vertical; }
+        .btn { background: var(--secondary); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-outline { background: transparent; color: var(--secondary); border: 2px solid var(--secondary); margin-top: 10px; }
+        .alert { padding: 10px; border-radius: 6px; margin-bottom: 15px; text-align: center; display: none; }
+        .alert-success { background: #dcfce7; color: #166534; }
+        .alert-error { background: #fee2e2; color: #991b1b; }
+        .loader { text-align: center; color: var(--secondary); }
+        footer { text-align: center; padding: 20px; font-size: 0.8rem; color: #94a3b8; margin-top: 40px; border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="theme-toggle" id="themeToggle">🌙</button>
+        <h1>KFU | تقييمات الطلاب</h1>
+        <p>اختيارك للمقرر يبدأ من تجربة الطلاب</p>
+    </header>
+    <div class="container">
+        <div id="alertBox" class="alert"></div>
+        <div class="stats-container">
+            <div class="stat-box"><h3 id="statDoctors">—</h3><p>الدكاترة</p></div>
+            <div class="stat-box"><h3 id="statReviews">—</h3><p>تقييمات منشورة</p></div>
+            <div class="stat-box"><h3 id="statAvg">—</h3><p>متوسط التقييم</p></div>
+        </div>
+
+        <h2 style="font-size: 1.2rem; margin-bottom: 15px;">📚 الدكاترة والتقييمات</h2>
+        <div class="filter-row">
+            <select id="courseFilter"><option value="">كل الأقسام والمقررات</option></select>
+            <input type="text" id="nameSearch" placeholder="🔍 ابحث باسم الدكتور...">
+        </div>
+        <div id="doctorList"><div class="loader">جارٍ تحميل البيانات...</div></div>
+
+        <div class="form-section">
+            <h2>⭐ أضف تقييمك</h2>
+            <p style="font-size:0.85rem; color:#94a3b8;">تقييمك مجهول الهوية. سيتم مراجعته قبل النشر.</p>
+            <form id="reviewForm">
+                <div class="form-group">
+                    <label>ابحث عن اسم الدكتور</label>
+                    <input list="doctorsList" id="reviewDoctorName" placeholder="اكتب اسم الدكتور..." required>
+                    <datalist id="doctorsList"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>التقييم بالنجوم</label>
+                    <select id="reviewRating">
+                        <option value="5">⭐⭐⭐⭐⭐ (ممتاز)</option>
+                        <option value="4">⭐⭐⭐⭐ (جيد جداً)</option>
+                        <option value="3">⭐⭐⭐ (جيد)</option>
+                        <option value="2">⭐⭐ (ضعيف)</option>
+                        <option value="1">⭐ (سيئ)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>تجربتك الأكاديمية</label>
+                    <textarea id="reviewText" placeholder="اكتب عن تجربتك فقط..." required></textarea>
+                </div>
+                <button type="submit" class="btn">إرسال التقييم للمراجعة</button>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2>💡 اقترح دكتوراً أو مقرراً</h2>
+            <form id="suggestionForm">
+                <div class="form-group">
+                    <label>اسم الدكتور</label>
+                    <input type="text" id="suggestName" placeholder="مثال: د. خالد س." required>
+                </div>
+                <div class="form-group">
+                    <label>القسم أو المقرر</label>
+                    <input type="text" id="suggestDept" placeholder="مثال: كلية الهندسة" required>
+                </div>
+                <button type="submit" class="btn btn-outline">إرسال الاقتراح</button>
+            </form>
+        </div>
+    </div>
+    <footer><strong>سياسة الخصوصية:</strong> هذا الموقع منصة لنقل تجارب الطلاب الأكاديمية. نحن نحذف أي محتوى يتضمن تشهيراً أو إساءة.</footer>
+
+    <script>
+        // ⚠️ ضع مفاتيح Supabase هنا ⚠️
+        const SUPABASE_URL = 'ضع_رابط_مشروعك_هنا';
+        const SUPABASE_ANON_KEY = 'ضع_المفتاح_العام_هنا';
+        
+        let supabaseClient;
+        let allDoctors = [];
+
+        if (SUPABASE_URL !== 'ضع_رابط_مشروعك_هنا') {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            loadData();
+        } else {
+            document.getElementById('doctorList').innerHTML = '<p style="color:red; text-align:center;">⚠️ الرجاء وضع مفاتيح Supabase في الكود أولاً.</p>';
+        }
+
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            htmlElement.setAttribute('data-theme', savedTheme);
+            themeToggleBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        }
+        themeToggleBtn.addEventListener('click', () => {
+            const newTheme = htmlElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = 'alert alert-' + type;
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 5000);
+        }
+
+        async function loadData() {
+            if (!supabaseClient) return;
+            const { data: doctors, error } = await supabaseClient.from('doctors').select(`*, reviews (*)`);
+            if (error) {
+                document.getElementById('doctorList').innerHTML = '<p style="color:red; text-align:center;">حدث خطأ في الاتصال.</p>';
+                return;
+            }
+            allDoctors = doctors;
+
+            const courseFilter = document.getElementById('courseFilter');
+            const departments = [...new Set(doctors.map(d => d.department))];
+            courseFilter.innerHTML = '<option value="">كل الأقسام والمقررات</option>' + 
+                departments.map(dept => `<option value="${dept}">${dept}</option>`).join('');
+
+            const doctorsList = document.getElementById('doctorsList');
+            doctorsList.innerHTML = doctors.map(doc => `<option value="${doc.name}">`).join('');
+
+            let totalReviews = 0, totalRatingSum = 0;
+            doctors.forEach(doc => {
+                const approved = doc.reviews.filter(r => r.is_approved);
+                totalReviews += approved.length;
+                totalRatingSum += approved.reduce((sum, r) => sum + r.rating, 0);
+            });
+
+            document.getElementById('statDoctors').textContent = doctors.length;
+            document.getElementById('statReviews').textContent = totalReviews;
+            document.getElementById('statAvg').textContent = totalReviews > 0 ? (totalRatingSum / totalReviews).toFixed(1) : '0.0';
+
+            renderDoctors(doctors);
+        }
+
+        function renderDoctors(doctorsList) {
+            const doctorListDiv = document.getElementById('doctorList');
+            if (doctorsList.length === 0) {
+                doctorListDiv.innerHTML = '<p style="text-align:center;">لا توجد نتائج مطابقة.</p>';
+                return;
+            }
+            doctorListDiv.innerHTML = doctorsList.map(doc => {
+                const approvedReviews = doc.reviews.filter(r => r.is_approved);
+                let avgRating = 0;
+                if (approvedReviews.length > 0) {
+                    avgRating = (approvedReviews.reduce((sum, r) => sum + r.rating, 0) / approvedReviews.length).toFixed(1);
+                }
+                const reviewsHTML = approvedReviews.map(r => `<div class="review-preview">"${r.review_text}"</div>`).join('');
+                const stars = avgRating > 0 ? '⭐'.repeat(Math.round(avgRating)) : 'لا يوجد تقييم';
+                return `
+                    <div class="doctor-card">
+                        <div class="doctor-name">${doc.name}</div>
+                        <div class="doctor-dept">${doc.department}</div>
+                        <div class="stars">${stars} ${avgRating > 0 ? `(${avgRating})` : ''}</div>
+                        ${reviewsHTML || '<p style="font-size:0.85rem; color:#94a3b8;">لا توجد تقييمات منشورة.</p>'}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('nameSearch').value.toLowerCase().trim();
+            const selectedDept = document.getElementById('courseFilter').value;
+            const filtered = allDoctors.filter(doc => {
+                const matchesName = doc.name.toLowerCase().includes(searchTerm);
+                const matchesDept = selectedDept === '' || doc.department === selectedDept;
+                return matchesName && matchesDept;
+            });
+            renderDoctors(filtered);
+        }
+
+        document.getElementById('nameSearch').addEventListener('input', applyFilters);
+        document.getElementById('courseFilter').addEventListener('change', applyFilters);
+
+        document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!supabaseClient) return;
+            const typedName = document.getElementById('reviewDoctorName').value;
+            const doctor = allDoctors.find(d => d.name === typedName);
+            if (!doctor) { showAlert('الرجاء اختيار اسم دكتور صحيح من القائمة المنسدلة.', 'error'); return; }
+            
+            const btn = this.querySelector('button');
+            btn.textContent = 'جارٍ الإرسال...'; btn.disabled = true;
+
+            const { error } = await supabaseClient.from('reviews').insert([
+                { doctor_id: doctor.id, rating: parseInt(document.getElementById('reviewRating').value), review_text: document.getElementById('reviewText').value, is_approved: false }
+            ]);
+
+            btn.textContent = 'إرسال التقييم للمراجعة'; btn.disabled = false;
+            if (error) { showAlert('حدث خطأ.', 'error'); } 
+            else { showAlert('تم الإرسال بنجاح! بانتظار المراجعة.', 'success'); this.reset(); }
+        });
+
+        document.getElementById('suggestionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!supabaseClient) return;
+            const btn = this.querySelector('button');
+            btn.textContent = 'جارٍ الإرسال...'; btn.disabled = true;
+            const { error } = await supabaseClient.from('suggestions').insert([
+                { suggested_name: document.getElementById('suggestName').value, suggested_dept: document.getElementById('suggestDept').value, is_approved: false }
+            ]);
+            btn.textContent = 'إرسال الاقتراح'; btn.disabled = false;
+            if (error) { showAlert('حدث خطأ.', 'error'); } 
+            else { showAlert('تم إرسال الاقتراح بنجاح!', 'success'); this.reset(); }
+        });
+    </script>
+</body>
+</html>
