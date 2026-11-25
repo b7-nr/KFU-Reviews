@@ -26,12 +26,12 @@
     </div>
     <script>
         // ⚠️ ضع مفاتيح Supabase هنا ⚠️
-        const SUPABASE_URL = 'ضع_رابط_مشروعك_هنا';
+        const SUPABASE_URL = 'https://wovypslgosqeyavendsq.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_YAr7-Oq9x1NHq7i-sXX7Zw_2KdLOpUi';
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (prompt("أدخل كلمة المرور:") !== "admin0") {
+        if (prompt("أدخل كلمة المرور:") !== "bin7erzeng") {
             document.body.innerHTML = "<h1 style='text-align:center; color:red; margin-top:50px;'>⛔ صلاحية مرفوضة.</h1>";
             throw new Error("Unauthorized");
         }
