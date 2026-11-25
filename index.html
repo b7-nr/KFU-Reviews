@@ -111,9 +111,6 @@
         let supabaseClient;
         let allDoctors = [];
 
-        if (SUPABASE_URL !== 'https://wovypslgosqeyavendsq.supabase.co') {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            loadData();
         } else {
             document.getElementById('doctorList').innerHTML = '<p style="color:red; text-align:center;">⚠️ الرجاء وضع مفاتيح Supabase في الكود أولاً.</p>';
         }
