@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة الإدارة</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 800px; margin: auto; }
+        h1 { text-align: center; color: #dc2626; }
+        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-right: 4px solid #3b82f6; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-approve { background: #10b981; }
+        .btn-reject { background: #ef4444; }
+        h2 { border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; color: #3b82f6; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ لوحة الإدارة</h1>
+        <h2>📝 التقييمات المعلقة</h2>
+        <div id="pendingReviews"></div>
+        <h2>💡 الاقتراحات المعلقة</h2>
+        <div id="pendingSuggestions"></div>
+    </div>
+    <script>
+        // ⚠️ ضع مفاتيح Supabase هنا ⚠️
+        const SUPABASE_URL = 'ضع_رابط_مشروعك_هنا';
+        const SUPABASE_ANON_KEY = 'ضع_المفتاح_العام_هنا';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        if (prompt("أدخل كلمة المرور:") !== "admin0") {
+            document.body.innerHTML = "<h1 style='text-align:center; color:red; margin-top:50px;'>⛔ صلاحية مرفوضة.</h1>";
+            throw new Error("Unauthorized");
+        }
+
+        async function loadAdminData() {
+            const { data: reviews } = await supabaseClient.from('reviews').select(`*, doctors (name, department)`).eq('is_approved', false);
+            const { data: suggestions } = await supabaseClient.from('suggestions').select('*').eq('is_approved', false);
+
+            const revDiv = document.getElementById('pendingReviews');
+            if (!reviews || reviews.length === 0) revDiv.innerHTML = '<p>لا توجد تقييمات معلقة.</p>';
+            else revDiv.innerHTML = reviews.map(r => `
+                <div class="card" id="rev-${r.id}">
+                    <strong>${r.doctors.name}</strong> - ${r.doctors.department}<br>
+                    <span style="color:#f59e0b;">${'⭐'.repeat(r.rating)}</span><br>
+                    <p>"${r.review_text}"</p>
+                    <div class="btn-group">
+                        <button class="btn btn-approve" onclick="approveRev(${r.id})">✅ موافقة</button>
+                        <button class="btn btn-reject" onclick="rejectRev(${r.id})">❌ رفض</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const sugDiv = document.getElementById('pendingSuggestions');
+            if (!suggestions || suggestions.length === 0) sugDiv.innerHTML = '<p>لا توجد اقتراحات معلقة.</p>';
+            else sugDiv.innerHTML = suggestions.map(s => `
+                <div class="card" id="sug-${s.id}">
+                    <strong>${s.suggested_name}</strong> - ${s.suggested_dept}
+                    <div class="btn-group">
+                        <button class="btn btn-approve" onclick="approveSug(${s.id})">✅ موافقة (أضفها في Supabase يدوياً)</button>
+                        <button class="btn btn-reject" onclick="rejectSug(${s.id})">❌ رفض</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approveRev(id) { await supabaseClient.from('reviews').update({ is_approved: true }).eq('id', id); document.getElementById(`rev-${id}`).remove(); }
+        async function rejectRev(id) { await supabaseClient.from('reviews').delete().eq('id', id); document.getElementById(`rev-${id}`).remove(); }
+        async function approveSug(id) { await supabaseClient.from('suggestions').update({ is_approved: true }).eq('id', id); document.getElementById(`sug-${id}`).remove(); }
+        async function rejectSug(id) { await supabaseClient.from('suggestions').delete().eq('id', id); document.getElementById(`sug-${id}`).remove(); }
+
+        loadAdminData();
+    </script>
+</body>
+</html>
