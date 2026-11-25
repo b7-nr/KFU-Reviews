@@ -111,10 +111,9 @@
         let supabaseClient;
         let allDoctors = [];
 
-        } else {
-            document.getElementById('doctorList').innerHTML = '<p style="color:red; text-align:center;">⚠️ الرجاء وضع مفاتيح Supabase في الكود أولاً.</p>';
-        }
-
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        loadData();
+        
         const themeToggleBtn = document.getElementById('themeToggle');
         const htmlElement = document.documentElement;
         const savedTheme = localStorage.getItem('theme');
